@@ -14,11 +14,17 @@
       width: 200px;
     }
 
-    #todos-list{
-      margin-left: 250px;
+    #todos-list, #List{
+      display: inline-block;
+      vertical-align: top;
     }
 
-    #List li span{
+    #todos-list{
+      margin-top: 10px;
+      margin-left: 50px;
+    }
+
+    #List li a{
       background: green;
       padding-bottom: 2px;
       cursor: pointer;
@@ -44,7 +50,7 @@
       <input type='button' onclick="createList(event)" value='create'>
       {% for d in data['lists'] %}
           <li>
-            <input type="checkbox" onchange="updateCheckBox(event)" {% if d.completed %}checked{% endif %} value={{d.id}}>
+            <input type="checkbox" onchange="updateListCheckBox(event)" {% if d.completed %}checked{% endif %} value={{d.id}}>
             <a href="/lists/{{d.id}}">{{d.name}}</a>
             <button onclick="deleteTodoList(event)" value={{d.id}}>X</button>
           </li>
@@ -53,6 +59,7 @@
 
 
     <ul id='todos-list'>
+      <h2>{{listId.name}}</h2>
       <input type='text' name='todoItem' id="description" placeholder="todoItem">
       <button onclick="create(event)" value={{listId.id}}>create</button>
       {% for d in data['items'] %}
@@ -156,7 +163,7 @@
             inputNode = document.createElement('INPUT');
             inputNode.setAttribute("type","checkbox");
             inputNode.setAttribute("value",jsonResponse['id'].toString());
-            inputNode.setAttribute("onchange","updateCheckBox(event)");
+            inputNode.setAttribute("onchange","updateListCheckBox(event)");
             //todo description
             text = document.createTextNode(jsonResponse['name']);
             a = document.createElement('a');
@@ -181,8 +188,31 @@
           })
     };
 
-    function deleteTodoList(event){
-      
+    function deleteTodoList(e){
+      fetch('/todos/'+e.target.value+'/deleteList',{
+        method: 'DELETE'
+      }).then(function(){
+        const item = e.target.parentElement;
+        item.remove()
+        document.getElementById('error').className="hidden"
+      })
+    }
+
+    function updateListCheckBox(e) {
+      fetch('/todos/List/complete', {
+            method: 'POST',
+            body: JSON.stringify({
+              'id': event.target.value,
+              'completed': event.target.checked
+            }),
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }).then(function(){
+            document.getElementById('error').className="hidden"
+          }).catch(function(){
+            document.getElementById('error').className="";
+          })
     }
 
   </script>

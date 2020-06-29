@@ -105,6 +105,28 @@ def complete():
     if not error:
         return redirect(url_for("index"))
 
+@app.route('/todos/List/complete', methods=['POST'])
+def completeList():
+    error = False
+    requestBody = request.get_json()
+    try:
+        print(requestBody)
+        list_id = int(requestBody['id'])
+        todoList = TodoList.query.get(list_id)
+        for todo in todoList.todos:
+            todo.completed = requestBody['completed']
+        todoList.completed = requestBody['completed']
+        db.session.commit()
+    except:
+        print("error")
+        db.session.rollback()
+        error = True
+        print(sys.exc_info)
+    finally:
+        db.session.close()
+    if not error:
+        return redirect(url_for("index"),list_id = list_id)
+
 @app.route('/todos/<todoId>', methods=['DELETE'])
 def delete(todoId):
     error = False
@@ -122,4 +144,28 @@ def delete(todoId):
         return jsonify({
             'success': True
         })
+
+@app.route('/todos/<list_id>/deleteList', methods=['DELETE'])
+def deleteList(list_id):
+    error = False
+    try:
+        print(list_id)
+        todoList = TodoList.query.get(list_id)
+        for todo in todoList.todos:
+            db.session.delete(todo)
+        db.session.delete(todoList)
+        db.session.commit()
+    except:
+        db.session.rollback()
+        error = True
+        print(sys.exc_info)
+    finally:
+        db.session.close()
+    if not error:
+        return jsonify({
+            'success': True
+        })
+    else:
+        abort(500)
+
 
