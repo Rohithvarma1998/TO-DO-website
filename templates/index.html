@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Todo</title>
+  </head>
+  <style>
+    .hidden{
+      display: None;
+    }
+
+    ul{
+      list-style: none;
+      margin-left: 5px;
+      width: 200px;
+    }
+    li{
+      clear: both;
+    }
+    li button{
+      -webkit-appearance: none;
+      background-color: white;
+      color: red;
+      border: none;
+      cursor: pointer;
+      float: right;
+    }
+  </style>
+  <body>
+    <input type='text' name='todoItem' id="description" placeholder="todoItem">
+    <input type='button' onclick=create() value='create'>
+    <h1 id="error" class="hidden">something went wrong</h1>
+    <ul id='todos-list'>
+      {% for d in data %}
+        <li>
+          <input type="checkbox" onchange="updateCheckBox(event)" {% if d.completed %}checked{% endif %} value={{d.id}}>
+          {{d.description}}
+          <button onclick="deleteTodo(event)" value={{d.id}}>X</button>
+        </li>
+      {% endfor %}
+    </ul>
+  </body>
+  <script>
+    var create = function() {
+      description = document.getElementById("description").value
+      fetch('/todos/create', {
+            method: 'POST',
+            body: JSON.stringify({
+              'description': description
+            }),
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }).then(function(response){
+            return response.json()
+          }).then(function(jsonResponse){
+            todosList = document.getElementById("todos-list");
+            listItem = document.createElement('LI');
+            //checkbox
+            inputNode = document.createElement('INPUT');
+            inputNode.setAttribute("type","checkbox");
+            inputNode.setAttribute("value",jsonResponse['id'].toString());
+            inputNode.setAttribute("onchange","updateCheckBox(event)");
+            //todo description
+            text = document.createTextNode(jsonResponse['description']);
+            //delete button
+            buttonText = document.createTextNode("X");
+            button = document.createElement("BUTTON");
+            button.setAttribute("value",jsonResponse['id'].toString());
+            button.setAttribute("onclick","deleteTodo(event)");
+            button.append(buttonText);
+
+            listItem.append(inputNode);
+            listItem.append(text);
+            listItem.append(button);
+            todosList.append(listItem);
+            document.getElementById('error').className="hidden";
+            document.getElementById("description").value="";
+          }).catch(function(){
+            document.getElementById('error').className="";
+            document.getElementById("description").value="";
+          })
+    };
+
+    function updateCheckBox(e) {
+      console.log(event);
+      fetch('/todos/complete', {
+            method: 'POST',
+            body: JSON.stringify({
+              'id': event.target.value,
+              'completed': event.target.checked
+            }),
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }).then(function(){
+            document.getElementById('error').className="hidden"
+          }).catch(function(){
+            document.getElementById('error').className="";
+          })
+    };
+
+    function deleteTodo(e) {
+      console.log(e);
+      fetch('/todos/'+e.target.value, {
+            method: 'DELETE'
+          }).then(function(){
+            const item = e.target.parentElement;
+            item.remove()
+            document.getElementById('error').className="hidden"
+          })
+    };
+
+  </script>
+</html>
